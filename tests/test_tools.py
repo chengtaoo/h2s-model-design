@@ -3,6 +3,8 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -69,6 +71,16 @@ class ToolsTest(unittest.TestCase):
         with patch.dict(os.environ, {'BAMBU_STUDIO_EXE':'invalid-override'}):
             r = envqa.inspect(config)
         self.assertEqual(r['applications']['bambu_studio']['path'], str(app.resolve()))
+    def test_installer_copy_and_explicit_update(self):
+        destination = self.root / '中文 skill'
+        command = [sys.executable, str(ROOT / 'scripts/install.py'), '--skip-deps', '--destination', str(destination)]
+        first = subprocess.run(command, cwd=self.root, capture_output=True)
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertTrue((destination / 'SKILL.md').is_file())
+        self.assertTrue((destination / 'examples/make_cad_tray.py').is_file())
+        self.assertFalse((destination / '.git').exists())
+        self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
+        self.assertEqual(subprocess.run(command + ['--update'], capture_output=True).returncode, 0)
 
 if __name__ == '__main__':
     unittest.main()

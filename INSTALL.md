@@ -43,7 +43,7 @@ py -3.11 -m venv .venv
 & ./.venv/Scripts/python.exe -c "import cadquery as cq; assert cq.Workplane('XY').box(10,10,10).val().isValid(); print('CAD OK')"
 ```
 
-检查脚本的 numpy/trimesh 版本已验证。CadQuery 版本范围是安装约束，不表示范围内全部版本均已测试；安装后必须运行上面的实体测试，并记录实际版本。完整模型任务还需实际导出、预览和切片验证。安装遇到无匹配二进制包，先确认 Python/平台支持，勿盲目触发大型源码编译。
+检查脚本的 numpy/trimesh 版本已验证。公开版固定 CadQuery 2.8.0 和解析成功的 trame-vtk 版本以减少依赖回溯；安装后仍须运行上面的实体测试并记录实际版本。依赖下载包含较大的几何内核和可视化库，首次安装可能需要数分钟及数百 MB 下载。完整模型任务还需实际导出、预览和切片验证。安装遇到无匹配二进制包，先确认 Python/平台支持，勿盲目触发大型源码编译。
 
 ## 软件发现与指定位置
 
@@ -88,7 +88,7 @@ portable-workspace/
 
 ## macOS / Linux
 
-Python 助手不依赖 Windows；使用 `python3 -m venv .venv`，将示例中的解释器改为 `./.venv/bin/python`。安装对应系统的 Studio 与建模器，使用 PATH 或本地配置。Windows 发现脚本仅适用于 Windows，不在其他系统运行。跨平台脚本可迁移，但当前测试平台为 Windows；其他系统上的 Studio CLI/渲染仍需实测。
+Python 助手不依赖 Windows；使用 `python3 -m venv .venv`，将示例中的解释器改为 `./.venv/bin/python`。安装对应系统的 Studio 与建模器，使用 PATH 或本地配置。Windows 发现脚本仅适用于 Windows，不在其他系统运行。基础检查与几何示例已通过 Windows/macOS/Linux CI；完整 CAD 安装在 Windows 实测，其他系统上的 CAD、Studio CLI 与渲染仍需验证。
 
 ## 目标机器验收
 

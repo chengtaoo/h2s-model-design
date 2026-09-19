@@ -1,3 +1,5 @@
 -r requirements-check.txt
-# Optional CAD backend; resolve a compatible binary wheel on the target host.
-cadquery>=2.6,<3
+# Optional CAD backend; versions selected for the tested Python 3.11 setup.
+cadquery==2.8.0
+# Avoid resolver backtracking across incompatible visualization releases.
+trame-vtk==2.8.13
