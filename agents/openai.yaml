@@ -1,0 +1,6 @@
+interface:
+  display_name: "H2S 自然语言建模"
+  short_description: "从自然语言生成模型、真实几何预览与经过切片验证的 H2S 工程"
+  default_prompt: "使用 $h2s-model-design，将我的创意制作成可预览、可修改的 H2S 可切片工程，由我在 Bambu Studio 中决定是否打印。"
+policy:
+  allow_implicit_invocation: true

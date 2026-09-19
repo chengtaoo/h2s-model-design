@@ -1,0 +1,3 @@
+-r requirements-check.txt
+# Optional CAD backend; resolve a compatible binary wheel on the target host.
+cadquery>=2.6,<3
