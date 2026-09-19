@@ -25,6 +25,8 @@ description: 从自然语言、草图或参考图创建和修改适合 Bambu Lab
 
 初次运行或工具失效读取 [本地环境](references/environment.md)。建模前读取 [建模与检查](references/modeling.md)。
 
+照片人物、相似度修订或已知料槽数量时，读取 [人物与颜色预算](references/portraits-and-palettes.md)。先验证头像近照与颜色映射，再投入完整切片。
+
 ## 实施闭环
 
 1. 写 `design-spec.json`：用途、毫米单位、尺寸、参数、部件/颜色表、假设和待确认项。后续修改优先更新参数，避免仅缩放最终网格。

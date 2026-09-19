@@ -20,6 +20,19 @@ bambu-studio --load-settings "machine.json;process.json" --load-filaments "filam
 
 能使用 UI 时重新打开交付工程，检查尺寸、部件、配色及层预览；不能时注明仅 CLI 验证。`validation.json` 至少含 status、tools、assumptions、geometry_checks、profile_source、printer_model、nozzle_mm、project_inspection、slice_result、visual_review、limitations；缺失结果用 null 和说明，不伪造通过。
 
+## Windows 2.8.2.61 本地验证经验
+
+以下是该版本实测行为，不保证其他版本相同：
+
+- `--load-assemble-list` 可把原位 STL 合为同一装配对象；不要逐个落床破坏相对位置。其 JSON 的 `plates[].objects[]` 包含 `path`、`count`、`filaments`、`assemble_index`、`pos_x`、`pos_y`、`pos_z`；测试中后五项为数组，同组部件使用相同 `assemble_index`。
+- 指定 `--outputdir` 时，`--export-3mf` 传文件名而非绝对路径，避免输出目录被重复拼接。先输出工程，再对工程独立切片。
+- 配置继承除 `inherits` 还有 `include`；被包含的模板可能没有 `type` 字段，不应因此丢弃。H2S 预设中的多个喷嘴变体不等于多个物理挤出机；按字段语义选择标准/高流量变体，不要凭数组长度截断未知字段。
+- Windows 启动器的标准输出可能为空；不能凭无日志判定成功或失败。结合返回码、本轮生成的 `result.json` 和实际输出文件核验。工程导出和切片可能覆盖同一个 `result.json`，分别保存或检查最后结果确实含 `sliced_plates`。
+- 切片结果应含非空实际 G-code、层信息以及与当前模型一致的三角面数。若有 G-code MD5 文件则核对。`warning_message`、各耗材用量、单盘对象数量均需检查；空的导出成功结果不等于切片成功。
+- 部件耗材映射从 `model_settings.config` 的 `part/metadata` 读取。切片后可能多出对象级 `extruder`，不能把它误当成新增部件。
+
+本地已完成 Blender 4.5.3 → 网格检查 → Bambu Studio 2.8.2.61 H2S 原生工程 → 单色/四色/七色实际切片。这个结果证明测试流程可行，不证明任意人物模型的相似度、实体强度或用户机器的料槽配置。公开仓库不包含测试使用的人物照片或私人模型。
+
 官方依据（2026-09-18 查阅）：
 - https://github.com/bambulab/BambuStudio/wiki/Command-Line-Usage
 - https://github.com/bambulab/BambuStudio

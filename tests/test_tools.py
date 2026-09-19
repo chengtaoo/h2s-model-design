@@ -62,6 +62,35 @@ class ToolsTest(unittest.TestCase):
         path.write_bytes(b'not a zip')
         with self.assertRaises(zipfile.BadZipFile):
             archiveqa.inspect(path)
+    def palette_archive(self, slots, count=4):
+        self.archive(True)
+        path = self.root / 'fixture.3mf'
+        # Rebuild the settings entry instead of making a duplicate ZIP entry.
+        with zipfile.ZipFile(path) as z:
+            entries = {n:z.read(n) for n in z.namelist()}
+        entries['Metadata/project_settings.config'] = json.dumps({'filament_colour':['#112233']*count})
+        entries['Metadata/model_settings.config'] = '<config><object><metadata key="extruder" value="1"/>' + ''.join(
+            '<part>' + (f'<metadata key="extruder" value="{s}"/>' if s is not None else '') + '</part>' for s in slots) + '</object></config>'
+        with zipfile.ZipFile(path, 'w') as z:
+            for name, data in entries.items():
+                z.writestr(name, data)
+        return path
+    def test_many_parts_four_filaments(self):
+        r = archiveqa.inspect(self.palette_archive([1,1,2,3,2,2,4]), 4)
+        self.assertEqual(r['explicit_part_filament_slots'], [1,1,2,3,2,2,4])
+        self.assertTrue(r['filament_limit_checked'])
+        self.assertFalse(r['slice_verified'])
+    def test_palette_over_budget(self):
+        with self.assertRaises(ValueError):
+            archiveqa.inspect(self.palette_archive([1,2,3,4,5], 5), 4)
+    def test_missing_and_invalid_part_assignments(self):
+        for slots in ([None], [0], [5], []):
+            with self.subTest(slots=slots), self.assertRaises(ValueError):
+                archiveqa.inspect(self.palette_archive(slots), 4)
+    def test_generic_archive_cannot_verify_palette(self):
+        self.archive()
+        with self.assertRaises(ValueError):
+            archiveqa.inspect(self.root / 'fixture.3mf', 4)
     def test_config_relative_path(self):
         app = self.root / 'tools' / 'placeholder.exe'
         app.parent.mkdir()

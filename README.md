@@ -51,7 +51,9 @@ H2S 标称空间 340×320×340 mm，实际摆盘还需考虑支撑、裙边和�
 
 ## 验证范围与限制
 
-本地 Windows 已验证检查工具、迁移路径及安装流程。仓库包含 Windows/macOS/Linux 自动检查工作流；是否通过请查看 [Actions](https://github.com/chengtaoo/h2s-model-design/actions)。CI 不安装 Bambu Studio，也不验证真实打印。
+本地 Windows 已验证检查工具、迁移路径及安装流程，并使用 Blender 4.5.3 和 Bambu Studio 2.8.2.61 完成人物模型的单色、四色、七色 H2S 实际切片；未实体试打。仓库包含 Windows/macOS/Linux 自动检查工作流；是否通过请查看 [Actions](https://github.com/chengtaoo/h2s-model-design/actions)。CI 不安装 Bambu Studio，也不验证真实打印。
+
+已知只有四个料槽时，可要求“最多四种耗材、单盘一次任务”，并使用 `scripts/inspect_3mf.py --max-filaments 4` 核对显式颜色映射。部件数可以多于耗材数。人物任务先审看头像近照，调整脸型、眼镜、五官关系和发型，再完成切片；详见 [人物与颜色预算](references/portraits-and-palettes.md)。参考照片和私人模型不包含在公开分发包中。
 
 完整 Studio 工程导出、H2S 切片和颜色显示需要在目标机器使用实际软件验证。归档检查不等于可切片，几何封闭也不代表壁厚、强度或支撑正确。该技能区分 `geometry_only`、`project_created`、`slice_verified`、`studio_reviewed` 四级结果，不编造成功结果。
 

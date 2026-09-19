@@ -7,7 +7,9 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 
-def inspect(path):
+def inspect(path, max_filaments=None):
+    if max_filaments is not None and max_filaments < 1:
+        raise ValueError('max_filaments must be positive')
     with zipfile.ZipFile(path) as archive:
         entries = archive.infolist()
         if len(entries) > 20000 or sum(i.file_size for i in entries) > 1024**3:
@@ -38,10 +40,31 @@ def inspect(path):
         printer = settings.get('printer_model')
         preset = settings.get('printer_settings_id')
         nozzle = settings.get('nozzle_diameter')
+        colors = settings.get('filament_colour', [])
+        part_slots = []
+        metadata_path = 'Metadata/model_settings.config'
+        if metadata_path in names:
+            raw = archive.read(metadata_path)
+            if b'<!DOCTYPE' in raw.upper() or b'<!ENTITY' in raw.upper():
+                raise ValueError('Unexpected XML entities')
+            metadata = ET.fromstring(raw)
+            # Object-level extruder metadata can appear only after slicing.
+            # Count explicit part mappings, not every metadata element.
+            for part in metadata.iter('part'):
+                slots = [m.get('value') for m in part.findall('metadata') if m.get('key') == 'extruder']
+                part_slots.append(int(slots[0]) if len(slots) == 1 else None)
+        palette_checked = max_filaments is not None
+        if palette_checked:
+            if not isinstance(colors, list) or not colors or len(colors) > max_filaments:
+                raise ValueError('Missing palette or filament count exceeds the requested limit')
+            if not part_slots or any(s is None or not 1 <= s <= len(colors) for s in part_slots):
+                raise ValueError('Missing, inherited or out-of-range part filament assignments; review in Studio')
         return {'archive_readable': True, 'models': models,
                 'bambu_project_settings_present': setting_path in names,
                 'printer_model_hint': printer, 'printer_preset_hint': preset,
                 'nozzle_diameter_hint': nozzle,
+                'filament_colors': colors, 'explicit_part_filament_slots': part_slots,
+                'filament_limit_checked': palette_checked, 'max_filaments': max_filaments,
                 'gcode_entries': [i.filename for i in entries if i.filename.lower().endswith('.gcode') and i.file_size],
                 'slice_verified': False,
                 'limitations': ['Metadata hints are not compatibility proof',
@@ -53,9 +76,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('project')
     parser.add_argument('--report', required=True)
+    parser.add_argument('--max-filaments', type=int, help='Require an explicit palette and part assignments within this limit')
     args = parser.parse_args()
     try:
-        report = inspect(args.project)
+        report = inspect(args.project, args.max_filaments)
         code = 0
     except Exception as exc:
         report = {'archive_readable': False, 'slice_verified': False, 'error': str(exc)}
