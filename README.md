@@ -2,7 +2,7 @@
 
 将你的想法变成可修改的 3D 模型、真实几何预览和 Bambu Lab H2S 切片工程，由你在 Bambu Studio 精修后决定是否打印。
 
-这是供 **Codex 等支持技能文件的 AI 编程助手**使用的技能，不是独立聊天应用，也不内置 AI 模型。它提供工作流程、安装入口、检查工具和示例；复杂模型由 AI 根据需求编写 CAD/Blender 脚本。**目前不是一个无需外部软件、任意描述都能一键成功的生成器。**
+这是供 **Codex 等支持技能文件的 AI 编程助手**使用的技能，不是独立聊天应用，也不内置 AI 模型。照片手办默认使用 **Tripo API → 轻量 Python 处理与预览 → Bambu Studio CLI**，不需要 Blender。它提供安装入口、可恢复生成、网格修复、有限色涂色与检查工具；相似度和可打印性仍需逐模型验证。
 
 ## 下载后怎么用
 
@@ -15,6 +15,8 @@ python scripts/install.py --with-cad
 ```
 
 安装器将技能复制到个人 Codex skills 目录，并在技能内部创建独立 Python 环境、安装检查依赖和 CadQuery、运行自检。支持 `CODEX_HOME`，不会修改系统 Python 包。若电脑只有 Windows Python launcher，可以用 `py -3.11` 替代 `python`。
+
+**照片手办使用 `python scripts/install.py --with-portrait`。** 再配置自己的 `TRIPO_API_KEY` 与正确区域，详见 [Tripo 接入](references/tripo.md)。不用安装 Blender；CLI/MCP 也是可选项。模型已由 Tripo 网页版生成时，可以直接提供 GLB，从本地处理阶段开始，不重复付费。
 
 已有 Blender 并主要做造型时，运行 `python scripts/install.py`，再单独安装/指定 [Blender](https://www.blender.org/download/)。默认安装只含检查依赖，不包含建模软件。已有同名技能会停止；明确更新时使用 `--update`。复制但暂不装依赖可用 `--skip-deps`。
 
@@ -41,6 +43,10 @@ python -m venv .venv
 安装 CadQuery 后可进一步运行 `examples/make_cad_tray.py`，生成带 2 mm 壁厚的开口收纳盘、STEP/STL 和几何 SVG。支持 `--length`、`--width`、`--height`、`--wall`、`--output` 参数；仍需 Studio 选择 H2S 配置并切片。
 
 ## 能得到什么
+
+支持 **Tripo 图生 3D → Python 网格与涂色精修 → Bambu 原生四色工程** 路线。用于照片人像时，保留 AI 生成的原始 GLB，分别检查贴图相似度和裸几何；再处理底座、封闭性和料槽。需要用户自己的 Tripo API 额度与上传授权，密钥只从环境读取。[Tripo 安装、计费与操作说明](references/tripo.md)。官方 CLI/MCP 可选，直接 API 客户端仅依赖 Python 标准库。复杂雕刻才考虑 Blender。
+
+新增 `painted_3mf.py` 以每个三角面的物理耗材号写入 Bambu 原生涂色，不靠 STL 保存颜色；`inspect_3mf.py` 同时校验部件和涂色树里的槽位。已用 H2S 配置实际切片验证四槽合成样例。处理照片仍需要真实预览检查与逐模型精修，不宣称任意照片自动保证相似度。
 
 - 可编辑源文件和参数，后续用自然语言修改。
 - STL/STEP/通用 3MF 等适当的模型文件和真实几何预览。

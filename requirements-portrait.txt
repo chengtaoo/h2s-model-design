@@ -1,0 +1,7 @@
+-r requirements-check.txt
+manifold3d==3.5.3
+pillow==12.3.0
+scipy==1.17.1
+networkx==3.6.1
+pyrender==0.1.45
+pyglet==2.1.16

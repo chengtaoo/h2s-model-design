@@ -9,13 +9,14 @@ import venv
 
 ROOT = Path(__file__).resolve().parent.parent
 FILES = ['SKILL.md', 'README.md', 'INSTALL.md', 'LICENSE', 'requirements-check.txt',
-         'requirements-cad.txt', 'agents', 'references', 'scripts', 'examples', 'tests']
+         'requirements-cad.txt', 'requirements-portrait.txt', 'agents', 'references', 'scripts', 'examples', 'tests']
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--destination', type=Path, help='Skill directory; defaults to CODEX_HOME/skills/h2s-model-design')
     parser.add_argument('--with-cad', action='store_true', help='Also install optional CadQuery backend')
+    parser.add_argument('--with-portrait', action='store_true', help='Install Tripo GLB processing and preview dependencies; Blender is not needed')
     parser.add_argument('--skip-deps', action='store_true', help='Copy only; for offline/manual dependency installation')
     parser.add_argument('--update', action='store_true', help='Explicitly allow updating existing skill files')
     args = parser.parse_args()
@@ -45,6 +46,8 @@ def main():
     python = env / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
     requirements = target / ('requirements-cad.txt' if args.with_cad else 'requirements-check.txt')
     subprocess.run([str(python), '-m', 'pip', 'install', '-r', str(requirements)], check=True)
+    if args.with_portrait:
+        subprocess.run([str(python), '-m', 'pip', 'install', '-r', str(target/'requirements-portrait.txt')], check=True)
     subprocess.run([str(python), '-m', 'unittest', 'discover', '-s', str(target / 'tests')], check=True)
     if args.with_cad:
         subprocess.run([str(python), '-c', "import cadquery as cq; assert cq.Workplane('XY').box(10,10,10).val().isValid(); print('CAD OK')"], check=True)

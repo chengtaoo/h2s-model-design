@@ -7,6 +7,39 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 
+def paint_slots(encoded):
+    """Decode Bambu/Prusa triangle selection tree without changing geometry."""
+    if not encoded:
+        return set()
+    if len(encoded) > 100000 or any(c not in '0123456789ABCDEF' for c in encoded):
+        raise ValueError('Invalid triangle painting encoding')
+    nibbles = iter(int(c, 16) for c in reversed(encoded))
+    slots = set()
+    pending = 1
+    try:
+        while pending:
+            code = next(nibbles)
+            pending -= 1
+            splits = code & 3
+            if splits:
+                pending += splits + 1
+            else:
+                state = code >> 2
+                if state == 3:
+                    while True:
+                        extra = next(nibbles)
+                        state += extra
+                        if extra != 15:
+                            break
+                if state:
+                    slots.add(state)
+        if next(nibbles, None) is not None:
+            raise ValueError('Trailing triangle painting data')
+    except StopIteration:
+        raise ValueError('Truncated triangle painting data') from None
+    return slots
+
+
 def inspect(path, max_filaments=None):
     if max_filaments is not None and max_filaments < 1:
         raise ValueError('max_filaments must be positive')
@@ -23,12 +56,19 @@ def inspect(path, max_filaments=None):
         if '[Content_Types].xml' not in names or '_rels/.rels' not in names:
             raise ValueError('Missing required package structure')
         models = []
+        painted_slots = set()
+        painted_triangles = 0
         for name in names:
             if name.lower().endswith('.model'):
                 raw = archive.read(name)
                 if b'<!DOCTYPE' in raw.upper() or b'<!ENTITY' in raw.upper():
                     raise ValueError('Unexpected XML entities')
                 root = ET.fromstring(raw)
+                for tri in root.findall('.//{*}triangle'):
+                    paint = tri.get('paint_color', '')
+                    if paint:
+                        painted_triangles += 1
+                        painted_slots.update(paint_slots(paint))
                 models.append({'path': name, 'unit': root.get('unit', 'millimeter'),
                                'objects': len(root.findall('.//{*}object')),
                                'triangles': len(root.findall('.//{*}triangle')),
@@ -59,11 +99,14 @@ def inspect(path, max_filaments=None):
                 raise ValueError('Missing palette or filament count exceeds the requested limit')
             if not part_slots or any(s is None or not 1 <= s <= len(colors) for s in part_slots):
                 raise ValueError('Missing, inherited or out-of-range part filament assignments; review in Studio')
+            if any(s > len(colors) for s in painted_slots):
+                raise ValueError('Painted triangle refers to a filament outside the palette')
         return {'archive_readable': True, 'models': models,
                 'bambu_project_settings_present': setting_path in names,
                 'printer_model_hint': printer, 'printer_preset_hint': preset,
                 'nozzle_diameter_hint': nozzle,
                 'filament_colors': colors, 'explicit_part_filament_slots': part_slots,
+                'painted_triangle_count': painted_triangles, 'painted_filament_slots': sorted(painted_slots),
                 'filament_limit_checked': palette_checked, 'max_filaments': max_filaments,
                 'gcode_entries': [i.filename for i in entries if i.filename.lower().endswith('.gcode') and i.file_size],
                 'slice_verified': False,

@@ -1,5 +1,7 @@
 # 安装、依赖与迁移
 
+照片手办的最小完整路线：Python 3.11、Bambu Studio、用户授权的 Tripo API。运行 `python scripts/install.py --with-portrait` 安装轻量网格与 OpenGL 预览依赖，不需要 Blender。已有 Tripo GLB 可跳过云端生成。
+
 公开版提供自动安装入口：解压后在目录中运行 `python scripts/install.py --with-cad`，会复制技能、创建独立环境、安装 CAD 与检查依赖并运行自检。已有 Blender 用户可省略 `--with-cad`。`--destination` 指定目标技能目录，`--skip-deps` 仅复制，`--update` 明确允许更新已有技能。Bambu Studio 和 Blender 仍通过下面的官方渠道单独安装。手动安装步骤也保留如下。
 
 ## 需要哪些软件
@@ -12,9 +14,12 @@
 | CadQuery | 尺寸精确的零件、盒子、支架 | 可选建模后端，使用 requirements-cad.txt 安装；不需要另装 CAD 桌面程序 |
 | Blender | 曲面、摆件、渲染或已有 Blender 工作流 | 从 https://www.blender.org/download/ 安装；CLI 与 Python 运行时随 Blender 提供 |
 | OpenSCAD | 沿用用户已有 OpenSCAD 模型 | 可选，从 https://openscad.org/downloads.html 安装 |
+| Tripo API / CLI | 可选的照片或文本 AI 建模 | API 客户端只需标准 Python；CLI 0.5.1 需要 Node.js >=20。见 [Tripo 接入](references/tripo.md)，需自备 API key 与额度 |
 | MCP、Node.js、AMS | 本阶段无强制依赖 | 不需要安装打印机 MCP 或连接打印机 |
 
 建模后端至少选择一种。CadQuery 与 Blender 不要求同时安装。PNG 预览仍需可用渲染器，已有 CAD 渲染器可复用，Blender 是可选统一渲染方案。原生界面自动操作需要当前客户端提供对应工具；安装 Python 并不会自动获得桌面控制能力。
+
+已有 AI 网格的修复与贴图处理可能需要 `manifold3d`、`Pillow`、`scipy`、`networkx`；这是可选后处理依赖，不用于认证。已验证版本见 `requirements-portrait.txt`：`python -m pip install -r requirements-portrait.txt`。Blender 提取脚本使用 Blender 自带的 Python/numpy；普通 Python 环境与之分开。约 200 万面的法线修复可能需要数分钟和数 GB 内存。
 
 ## 目录和路径规则
 
