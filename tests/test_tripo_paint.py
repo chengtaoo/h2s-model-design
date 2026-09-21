@@ -37,6 +37,14 @@ class PaintTests(unittest.TestCase):
             with zipfile.ZipFile(p/'new.3mf') as z:
                 self.assertNotIn('old-private-photo.png',z.namelist())
                 records={n:z.read(n) for n in z.namelist()}
+            # Studio normalizes a part slot into its explicit object parent.
+            inherited=dict(records)
+            inherited['Metadata/model_settings.config']=inherited['Metadata/model_settings.config'].replace(b'<metadata key="extruder" value="1"/><metadata key="matrix"',b'<metadata key="matrix"')
+            with zipfile.ZipFile(p/'inherited.3mf','w') as z:
+                for n,data in inherited.items():z.writestr(n,data)
+            inherited_report=qa.inspect(p/'inherited.3mf',4)
+            self.assertEqual(inherited_report['explicit_part_filament_slots'],[None])
+            self.assertEqual(inherited_report['effective_part_filament_slots'],[1])
             records['3D/Objects/object_1.model']=records['3D/Objects/object_1.model'].replace(b'paint_color="1C"',b'paint_color="2C"')
             with zipfile.ZipFile(p/'bad.3mf','w') as z:
                 for n,data in records.items():z.writestr(n,data)

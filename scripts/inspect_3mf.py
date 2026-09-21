@@ -82,6 +82,7 @@ def inspect(path, max_filaments=None):
         nozzle = settings.get('nozzle_diameter')
         colors = settings.get('filament_colour', [])
         part_slots = []
+        effective_slots = []
         metadata_path = 'Metadata/model_settings.config'
         if metadata_path in names:
             raw = archive.read(metadata_path)
@@ -90,15 +91,22 @@ def inspect(path, max_filaments=None):
             metadata = ET.fromstring(raw)
             # Object-level extruder metadata can appear only after slicing.
             # Count explicit part mappings, not every metadata element.
-            for part in metadata.iter('part'):
-                slots = [m.get('value') for m in part.findall('metadata') if m.get('key') == 'extruder']
-                part_slots.append(int(slots[0]) if len(slots) == 1 else None)
+            for obj in metadata.findall('object'):
+                parent_slots = [m.get('value') for m in obj.findall('metadata') if m.get('key') == 'extruder']
+                parent_slot = int(parent_slots[0]) if len(parent_slots) == 1 else None
+                for part in obj.findall('part'):
+                    slots = [m.get('value') for m in part.findall('metadata') if m.get('key') == 'extruder']
+                    explicit = int(slots[0]) if len(slots) == 1 else None
+                    part_slots.append(explicit)
+                    # Studio may omit a redundant part slot on save. Resolve only
+                    # an explicitly recorded immediate parent; never assume slot 1.
+                    effective_slots.append(explicit if slots else parent_slot)
         palette_checked = max_filaments is not None
         if palette_checked:
             if not isinstance(colors, list) or not colors or len(colors) > max_filaments:
                 raise ValueError('Missing palette or filament count exceeds the requested limit')
-            if not part_slots or any(s is None or not 1 <= s <= len(colors) for s in part_slots):
-                raise ValueError('Missing, inherited or out-of-range part filament assignments; review in Studio')
+            if not effective_slots or any(s is None or not 1 <= s <= len(colors) for s in effective_slots):
+                raise ValueError('Missing, unresolved or out-of-range filament assignments; review in Studio')
             if any(s > len(colors) for s in painted_slots):
                 raise ValueError('Painted triangle refers to a filament outside the palette')
         return {'archive_readable': True, 'models': models,
@@ -106,6 +114,7 @@ def inspect(path, max_filaments=None):
                 'printer_model_hint': printer, 'printer_preset_hint': preset,
                 'nozzle_diameter_hint': nozzle,
                 'filament_colors': colors, 'explicit_part_filament_slots': part_slots,
+                'effective_part_filament_slots': effective_slots,
                 'painted_triangle_count': painted_triangles, 'painted_filament_slots': sorted(painted_slots),
                 'filament_limit_checked': palette_checked, 'max_filaments': max_filaments,
                 'gcode_entries': [i.filename for i in entries if i.filename.lower().endswith('.gcode') and i.file_size],
